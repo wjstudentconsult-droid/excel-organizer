@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>จัดระเบียบข้อมูล Excel</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#eceff3;--pn:#fff;--ink:#1c2733;--mut:#5d6b7a;--ln:#d3d9e0;--ac:#0e5e6f;--ac2:#0a4856;--hl:#ffe27a;--nc:#d5eee4;--er:#b3261e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans Thai",Tahoma,sans-serif}
+header{background:var(--ac2);color:#fff;padding:22px 20px}
+header h1{margin:0;font-size:24px;font-weight:600}header p{margin:4px 0 0;opacity:.85}
+main{max-width:1240px;margin:0 auto;padding:16px}
+section{background:var(--pn);border:1px solid var(--ln);border-radius:6px;margin:0 0 16px;padding:16px 18px}
+h2{margin:0 0 12px;font-size:17px;font-weight:600;display:flex;gap:10px;align-items:center}
+h2 b{background:var(--ac);color:#fff;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:14px}
+.drop{display:block;border:2px dashed var(--ac);border-radius:6px;padding:26px;text-align:center;cursor:pointer;color:var(--ac);font-weight:500}
+.drop.over,.drop:hover,.drop:focus-within{background:#e4f1f3}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-top:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--mut);min-width:180px}
+label.in{flex-direction:row;align-items:center;gap:6px;min-width:0;color:var(--ink)}
+select,input[type=text],input[type=number]{font:inherit;padding:7px 9px;border:1px solid var(--ln);border-radius:4px;background:#fff;color:var(--ink)}
+button{font:inherit;font-weight:500;padding:8px 16px;border-radius:4px;border:1px solid var(--ac);background:#fff;color:var(--ac);cursor:pointer}
+button.p{background:var(--ac);color:#fff}button.p:hover{background:var(--ac2)}button:hover{background:#e4f1f3}
+button.d{border-color:var(--er);color:var(--er)}button.d:hover{background:#fbe9e7}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.s{padding:3px 9px;font-size:12.5px}
+:focus-visible{outline:3px solid #f2a900;outline-offset:1px}
+.wrap{overflow:auto;border:1px solid var(--ln);border-radius:4px;max-height:520px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--ln);padding:5px 9px;white-space:nowrap;text-align:left}
+th{background:#e3e8ee;position:sticky;top:0;font-weight:600}
+.ix{background:#f2f4f7;color:var(--mut);text-align:right;font-size:12.5px}
+th.hc{background:#a9dcc8}td.nc{background:var(--nc)}td.ch{background:var(--hl)}
+.meta{color:var(--mut);font-size:13.5px;margin:0 0 8px}
+.cks{display:flex;flex-wrap:wrap;gap:4px 14px;border:1px solid var(--ln);border-radius:4px;padding:8px;max-height:150px;overflow:auto;min-width:300px}
+.cks label{flex-direction:row;gap:5px;min-width:0;color:var(--ink)}
+.msg{background:#e6f3ee;border-left:4px solid var(--ac);padding:8px 12px;margin:0 0 10px;border-radius:3px}
+.lg span{display:inline-block;padding:1px 10px;margin-right:10px;border:1px solid var(--ln);font-size:13px}
+.hide{display:none}
+dialog{border:1px solid var(--ln);border-radius:6px;padding:18px;max-width:560px;width:92%}
+dialog::backdrop{background:#0006}
+.rn{display:grid;grid-template-columns:40px 1fr;gap:6px 8px;align-items:center;max-height:55vh;overflow:auto;margin:10px 0}
+.rn input{width:100%}
+</style>
+</head>
+<body>
+<header><h1>จัดระเบียบข้อมูล Excel</h1><p>แนบไฟล์ เลือกวิธีจัดการ แล้วดาวน์โหลดไฟล์ใหม่ ข้อมูลทั้งหมดประมวลผลในเครื่องของคุณ ไม่ถูกอัปโหลดไปที่ไหน</p></header>
+<main>
+<section>
+ <h2><b>1</b>แนบไฟล์</h2>
+ <label class="drop" id="drop">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่ (.xlsx .xls .csv)<input type="file" id="file" accept=".xlsx,.xls,.xlsm,.csv"></label>
+ <div class="row"><button id="sample">ลองใช้ข้อมูลตัวอย่าง</button><span class="meta" style="margin:0">ไม่มีไฟล์ในมือ? กดเพื่อโหลดตารางตัวอย่างมาทดลองทุกฟังก์ชัน</span></div>
+ <div class="row hide" id="fopts">
+  <span id="fname" style="font-weight:500"></span>
+  <label>เลือกชีต<select id="sheet"></select></label>
+  <label class="in"><input type="checkbox" id="hdr" checked>แถวแรกเป็นชื่อคอลัมน์</label>
+ </div>
+</section>
+
+<section id="s2" class="hide">
+ <h2><b>2</b>ตัวอย่างข้อมูล</h2>
+ <p class="meta" id="info"></p>
+ <div class="wrap" id="prev"></div>
+</section>
+
+<section id="s3" class="hide">
+ <h2><b>3</b>เลือกวิธีจัดการข้อมูล</h2>
+ <div class="row" style="margin-top:0">
+  <label style="min-width:320px">ฟังก์ชัน<select id="op"></select></label>
+  <button id="ren">แก้ไขชื่อคอลัมน์</button>
+ </div>
+ <div class="row" id="form"></div>
+ <div class="row" id="modebox"></div>
+ <div class="row">
+  <button class="p" id="run">ประมวลผล</button>
+  <button id="undo" disabled>ย้อนกลับ 1 ขั้น</button>
+  <button class="d" id="reset">รีเซ็ตข้อมูล</button>
+ </div>
+ <p class="meta" style="margin-top:10px">ประมวลผลต่อเนื่องได้หลายครั้ง แต่ละครั้งจะทำต่อจากผลล่าสุด กดรีเซ็ตเพื่อกลับไปข้อมูลเดิม</p>
+</section>
+
+<section id="s4" class="hide">
+ <h2><b>4</b>ผลลัพธ์</h2>
+ <div class="msg" id="msg"></div>
+ <p class="lg"><span style="background:var(--hl)">เซลล์ที่ถูกแก้ไข</span><span style="background:var(--nc)">คอลัมน์ใหม่ / คอลัมน์ที่ได้รับผล</span></p>
+ <div class="wrap" id="res"></div>
+ <p class="meta" id="note"></p>
+ <div class="row"><button class="p" id="dl">ดาวน์โหลดเป็น Excel (.xlsx)</button><button id="dlc">ดาวน์โหลดเป็น CSV</button></div>
+</section>
+</main>
+
+<dialog id="dlg2"><p id="dmsg" style="margin:0 0 6px"></p><div class="row"><button class="p" id="dok">ตกลง</button><button id="dno">ยกเลิก</button></div></dialog>
+<dialog id="dlg"><h2 style="margin:0">แก้ไขชื่อคอลัมน์</h2><div class="rn" id="rnl"></div>
+ <div class="row"><button class="p" id="rnok">บันทึกชื่อ</button><button id="rnno">ยกเลิก</button></div></dialog>
+
+<script>
+const $=s=>document.querySelector(s), p2=n=>String(n).padStart(2,'0');
+const fmtD=d=>`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+const S=v=>v==null?'':v instanceof Date?fmtD(v):String(v);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nv=x=>{const t=S(x).replace(/,/g,'').trim();return t===''||isNaN(+t)?null:+t};
+const rd=n=>Math.round(n*1e4)/1e4;
+/* หน้าต่างแจ้งเตือน/ยืนยันในหน้าเว็บ (alert/confirm ของเบราว์เซอร์อาจถูกบล็อกในกรอบพรีวิว) */
+let dCb=null;
+function ask(msg,cb){$('#dmsg').textContent=msg;dCb=cb;$('#dno').classList.toggle('hide',!cb);$('#dok').textContent=cb?'ตกลง':'ปิด';$('#dlg2').showModal()}
+function note(msg){ask(msg,null)}
+$('#dok').onclick=()=>{$('#dlg2').close();const f=dCb;dCb=null;if(f)f()};
+$('#dno').onclick=()=>{dCb=null;$('#dlg2').close()};
+let wb,fileName='ข้อมูล',orig,cur,hist=[],lastMk=null;
+
+/* ---------- เปรียบเทียบ / วันที่ / สถิติ ---------- */
+const ord=dir=>(a,b)=>{const x=S(a),y=S(b);if(x==='')return y===''?0:1;if(y==='')return -1;const nx=nv(a),ny=nv(b);
+ const c=nx!==null&&ny!==null?nx-ny:x.localeCompare(y,'th',{numeric:true});return dir==='desc'?-c:c};
+const TM=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+function pd(v){
+ if(v instanceof Date&&!isNaN(v))return{d:v.getDate(),m:v.getMonth()+1,y:v.getFullYear()};
+ if(typeof v==='number'&&v>20000&&v<80000){const t=new Date(Math.round((v-25569)*864e5));return{d:t.getUTCDate(),m:t.getUTCMonth()+1,y:t.getUTCFullYear()}}
+ const s=S(v).trim();let m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);if(m)return{y:+m[1],m:+m[2],d:+m[3]};
+ m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);return m?{d:+m[1],m:+m[2],y:+m[3]}:null}
+function dateFn(k,v,era){const o=pd(v);if(!o)return'';const ce=o.y>2400?o.y-543:o.y,y=era==='be'?ce+543:ce;
+ return({day:o.d,month:o.m,year:y,monthName:TM[o.m-1]||'',weekday:TW[new Date(Date.UTC(ce,o.m-1,o.d)).getUTCDay()],
+  iso:`${y}-${p2(o.m)}-${p2(o.d)}`,dmy:`${p2(o.d)}/${p2(o.m)}/${y}`})[k]}
+const DATEK=['day','month','year','monthName','weekday','iso','dmy'];
+const PROV='กรุงเทพมหานคร,กระบี่,กาญจนบุรี,กาฬสินธุ์,กำแพงเพชร,ขอนแก่น,จันทบุรี,ฉะเชิงเทรา,ชลบุรี,ชัยนาท,ชัยภูมิ,ชุมพร,เชียงราย,เชียงใหม่,ตรัง,ตราด,ตาก,นครนายก,นครปฐม,นครพนม,นครราชสีมา,นครศรีธรรมราช,นครสวรรค์,นนทบุรี,นราธิวาส,น่าน,บึงกาฬ,บุรีรัมย์,ปทุมธานี,ประจวบคีรีขันธ์,ปราจีนบุรี,ปัตตานี,พระนครศรีอยุธยา,พะเยา,พังงา,พัทลุง,พิจิตร,พิษณุโลก,เพชรบุรี,เพชรบูรณ์,แพร่,ภูเก็ต,มหาสารคาม,มุกดาหาร,แม่ฮ่องสอน,ยโสธร,ยะลา,ร้อยเอ็ด,ระนอง,ระยอง,ราชบุรี,ลพบุรี,ลำปาง,ลำพูน,เลย,ศรีสะเกษ,สกลนคร,สงขลา,สตูล,สมุทรปราการ,สมุทรสงคราม,สมุทรสาคร,สระแก้ว,สระบุรี,สิงห์บุรี,สุโขทัย,สุพรรณบุรี,สุราษฎร์ธานี,สุรินทร์,หนองคาย,หนองบัวลำภู,อ่างทอง,อำนาจเจริญ,อุดรธานี,อุตรดิตถ์,อุทัยธานี,อุบลราชธานี'.split(',');
+const EX={
+ email:s=>(s.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g)||[]).join(', '),
+ phone:s=>(s.match(/0\d{1,2}[- ]?\d{3,4}[- ]?\d{3,4}/g)||[]).join(', '),
+ url:s=>(s.match(/https?:\/\/[^\s,]+|www\.[^\s,]+/g)||[]).join(', '),
+ nums:s=>(s.match(/-?\d+(\.\d+)?/g)||[]).join(''),
+ thai:s=>s.replace(/[^\u0E00-\u0E7F\s]/g,'').trim(),
+ eng:s=>s.replace(/[^A-Za-z\s]/g,'').trim(),
+ house:s=>(s.trim().match(/^\d+(\/\d+)*/)||[''])[0],
+ tambon:s=>(s.match(/(?:ต\.|ตำบล|แขวง)\s*([^\s,]+)/)||[])[1]||'',
+ amphoe:s=>(s.match(/(?:อ\.|อำเภอ|เขต)\s*([^\s,]+)/)||[])[1]||'',
+ province:s=>/กรุงเทพ|กทม/.test(s)?'กรุงเทพมหานคร':PROV.find(x=>s.includes(x))||'',
+ zip:s=>(s.match(/(?<!\d)\d{5}(?!\d)/g)||[]).pop()||''};
+const ST={sum:a=>a.reduce((x,y)=>x+y,0),avg:a=>a.length?ST.sum(a)/a.length:'',min:a=>a.length?Math.min(...a):'',max:a=>a.length?Math.max(...a):'',
+ count:a=>a.length,median:a=>{if(!a.length)return'';const b=[...a].sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2}};
+const STL={sum:'ผลรวม',avg:'ค่าเฉลี่ย',min:'ค่าต่ำสุด',max:'ค่าสูงสุด',count:'จำนวน',median:'มัธยฐาน'};
+const STSEL=[['sum','ผลรวม'],['avg','ค่าเฉลี่ย'],['min','ค่าต่ำสุด'],['max','ค่าสูงสุด'],['count','จำนวน (นับเฉพาะตัวเลข)'],['median','มัธยฐาน']];
+const RX={letters:/[A-Za-z\u0E01-\u0E4E]/g,digits:/[0-9\u0E50-\u0E59]/g,space:/\s/g,sym:/[^A-Za-z0-9\u0E00-\u0E7F\s]/g};
+
+/* ---------- ฟิลด์ ---------- */
+const C={k:'col',t:'col',l:'คอลัมน์ที่ต้องการจัดการ'},CS={k:'cols',t:'cols',l:'เลือกคอลัมน์'};
+const N=(k,l,v)=>({k,t:'num',l,v}),T=(k,l,v='')=>({k,t:'text',l,v}),L=(k,l,o)=>({k,t:'sel',l,o}),SO=[['asc','น้อย → มาก (ก → ฮ, A → Z)'],['desc','มาก → น้อย (ฮ → ก, Z → A)']];
+const ERA=L('era','รูปแบบปี',[['ce','ค.ศ.'],['be','พ.ศ.']]);
+
+/* ---------- ฟังก์ชันทั้งหมด ---------- */
+const OPS=[
+{id:'cutL',g:'ตัด / เพิ่ม / ลบข้อความ',l:'ตัดตัวอักษรหรือตัวเลขด้านหน้าออก',f:[C,N('n','จำนวนตัวที่ตัดออก',1)],map:(v,p)=>S(v).slice(+p.n)},
+{id:'cutR',g:0,l:'ตัดตัวอักษรหรือตัวเลขด้านหลังออก',f:[C,N('n','จำนวนตัวที่ตัดออก',1)],map:(v,p)=>{const s=S(v);return s.slice(0,Math.max(0,s.length-p.n))}},
+{id:'keepL',g:0,l:'เก็บเฉพาะตัวหน้า N ตัว',f:[C,N('n','จำนวนตัวที่เก็บ',3)],map:(v,p)=>S(v).slice(0,+p.n)},
+{id:'keepR',g:0,l:'เก็บเฉพาะตัวท้าย N ตัว',f:[C,N('n','จำนวนตัวที่เก็บ',3)],map:(v,p)=>+p.n?S(v).slice(-p.n):''},
+{id:'addL',g:0,l:'เพิ่มตัวอักษรหรือตัวเลขด้านหน้าทุกแถว',f:[C,T('t','ข้อความที่เพิ่ม')],map:(v,p)=>p.t+S(v)},
+{id:'addR',g:0,l:'เพิ่มตัวอักษรหรือตัวเลขด้านหลังทุกแถว',f:[C,T('t','ข้อความที่เพิ่ม')],map:(v,p)=>S(v)+p.t},
+{id:'rm',g:0,l:'ลบตัวอักษรหรือตัวเลขทุกแถว',f:[C,L('w','สิ่งที่ต้องการลบ',[['letters','ตัวอักษรทั้งหมด (ไทย/อังกฤษ)'],['digits','ตัวเลขทั้งหมด'],['space','ช่องว่างทั้งหมด'],['sym','สัญลักษณ์พิเศษ'],['text','ข้อความที่ระบุเอง']]),T('t','ข้อความที่ระบุ (ใช้เมื่อเลือก "ข้อความที่ระบุเอง")')],
+ map:(v,p)=>p.w==='text'?(p.t?S(v).split(p.t).join(''):S(v)):S(v).replace(RX[p.w],'')},
+{id:'rep',g:0,l:'ค้นหาและแทนที่ข้อความ',f:[C,T('a','ค้นหา'),T('b','แทนที่ด้วย'),L('m','โหมด',[['t','ข้อความปกติ'],['r','Regex']])],
+ map:(v,p)=>{const s=S(v);if(!p.a)return s;try{return p.m==='r'?s.replace(new RegExp(p.a,'g'),p.b):s.split(p.a).join(p.b)}catch(e){return s}}},
+{id:'case',g:0,l:'จัดรูปแบบข้อความ (ตัวพิมพ์ / ช่องว่าง)',f:[C,L('c','รูปแบบ',[['trim','ตัดช่องว่างหัวท้าย'],['collapse','ยุบช่องว่างซ้ำให้เหลือช่องเดียว'],['upper','ตัวพิมพ์ใหญ่ทั้งหมด'],['lower','ตัวพิมพ์เล็กทั้งหมด'],['title','ขึ้นต้นคำด้วยตัวพิมพ์ใหญ่']])],
+ map:(v,p)=>{const s=S(v);return({trim:()=>s.trim(),collapse:()=>s.trim().replace(/\s+/g,' '),upper:()=>s.toUpperCase(),lower:()=>s.toLowerCase(),title:()=>s.toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase())})[p.c]()}},
+{id:'pad',g:0,l:'เติมอักขระให้ครบความยาว (เช่น เติมเลข 0 นำหน้า)',f:[C,N('n','ความยาวรวม',5),T('c','เติมด้วย','0'),L('s','เติมด้านไหน',[['l','ด้านหน้า'],['r','ด้านหลัง']])],
+ map:(v,p)=>p.s==='l'?S(v).padStart(+p.n,p.c||'0'):S(v).padEnd(+p.n,p.c||'0')},
+{id:'fill',g:0,l:'เติมค่าในเซลล์ที่ว่าง',f:[C,T('t','ค่าที่เติม','-')],map:(v,p)=>S(v).trim()===''?p.t:v},
+{id:'tonum',g:0,l:'แปลงข้อความเป็นตัวเลข (ตัดตัวอักษรที่ไม่ใช่ตัวเลขออก)',f:[C],map:v=>{const n=parseFloat(S(v).replace(/[^0-9.\-]/g,''));return isNaN(n)?'':n}},
+
+{id:'calc',g:'คำนวณและสถิติ',l:'คำนวณตัวเลขทุกแถว (บวก ลบ คูณ หาร)',f:[C,L('o','เครื่องหมาย',[['+','+ บวก'],['-','− ลบ'],['*','× คูณ'],['/','÷ หาร'],['%','% หารเอาเศษ'],['^','^ ยกกำลัง']]),N('n','ตัวเลข',1),
+ {k:'c2',t:'col',opt:'(ใช้ตัวเลขที่กรอก)',l:'หรือใช้ค่าจากคอลัมน์อื่นแทน'},N('dec','ปัดทศนิยม (เว้นว่าง = ไม่ปัด)','')],
+ map:(v,p,r)=>{const a=nv(v),b=p.c2!==''?nv(r[+p.c2]):+p.n;if(a===null||b===null||isNaN(b))return v;
+  let x=({'+':a+b,'-':a-b,'*':a*b,'/':b?a/b:'','%':b?a%b:'','^':Math.pow(a,b)})[p.o];if(x===''||!isFinite(x))return'';
+  return p.dec!==''?+x.toFixed(+p.dec):rd(x)}},
+{id:'statCol',g:0,l:'หาผลรวม / ค่าเฉลี่ย ฯลฯ ของทั้งคอลัมน์ (เพิ่มแถวสรุปท้ายตาราง)',f:[CS,L('s','ต้องการหา',[...STSEL,['all','ทุกค่า']])],
+ run:(d,p,mk)=>{const ks=p.s==='all'?['sum','avg','min','max','count']:[p.s],lab=d.h.findIndex((_,i)=>!p.cols.includes(i));
+  ks.forEach(k=>{const row=Array(d.h.length).fill('');if(lab>=0)row[lab]=STL[k];
+   p.cols.forEach(c=>{row[c]=rd(ST[k](d.r.map(r=>nv(r[c])).filter(x=>x!==null)))});mk.rows.add(d.r.length);d.r.push(row)});return`เพิ่มแถวสรุป ${ks.length} แถวท้ายตาราง`}},
+{id:'statRow',g:0,l:'หาผลรวม / ค่าเฉลี่ย ฯลฯ ของแต่ละแถว (สร้างคอลัมน์ใหม่)',f:[CS,L('s','ต้องการหา',STSEL),T('name','ชื่อคอลัมน์ใหม่','ผลลัพธ์')],
+ run:(d,p,mk)=>{ins(d,d.h.length,p.name||'ผลลัพธ์',d.r.map(r=>{const a=p.cols.map(c=>nv(r[c])).filter(x=>x!==null);return a.length?rd(ST[p.s](a)):''}),mk)}},
+{id:'seq',g:0,l:'เพิ่มคอลัมน์เลขลำดับ',f:[N('st','เริ่มที่',1),T('name','ชื่อคอลัมน์ใหม่','ลำดับ')],run:(d,p,mk)=>{ins(d,0,p.name||'ลำดับ',d.r.map((_,i)=>+p.st+i),mk)}},
+
+{id:'ext',g:'ดึงข้อมูล / แยกเซลล์',l:'สร้างคอลัมน์ใหม่เฉพาะ วัน เดือน ปี อีเมล ที่อยู่ ฯลฯ',f:[C,L('k','ต้องการแสดงเฉพาะ',[
+ ['day','วันที่ (เลขวัน)'],['month','เดือน (ตัวเลข)'],['monthName','เดือน (ชื่อเดือนไทย)'],['year','ปี'],['weekday','วันในสัปดาห์'],['iso','วันที่แบบ ปปปป-ดด-วว'],['dmy','วันที่แบบ วว/ดด/ปปปป'],
+ ['email','อีเมล'],['phone','เบอร์โทรศัพท์'],['url','ลิงก์เว็บไซต์'],['house','บ้านเลขที่ (ต้นข้อความ)'],['tambon','ตำบล / แขวง'],['amphoe','อำเภอ / เขต'],['province','จังหวัด'],['zip','รหัสไปรษณีย์'],
+ ['nums','เฉพาะตัวเลข'],['thai','เฉพาะตัวอักษรไทย'],['eng','เฉพาะตัวอักษรอังกฤษ']]),ERA],
+ map:(v,p)=>DATEK.includes(p.k)?dateFn(p.k,v,p.era):EX[p.k](S(v))},
+{id:'split',g:0,l:'แยกเซลล์ด้วยเครื่องหมายหรือเว้นวรรค (เช่น ชื่อ / นามสกุล)',f:[C,L('d','แยกด้วย',[[' ','เว้นวรรค'],[',','จุลภาค ,'],[';','อัฒภาค ;'],[':','ทวิภาค :'],['|','เส้นตั้ง |'],['/','ทับ /'],['-','ขีดกลาง -'],['\t','Tab'],['x','ระบุเอง']]),T('x','ตัวแยกที่ระบุเอง'),
+ N('n','จำนวนคอลัมน์ที่ต้องการ (0 = อัตโนมัติ)',0),T('name','คำนำหน้าชื่อคอลัมน์ใหม่ (เว้นว่าง = ใช้ชื่อเดิม)'),{k:'del',t:'chk',l:'ลบคอลัมน์ต้นฉบับหลังแยก'}],
+ run:(d,p,mk)=>{const ci=+p.col,sep=p.d==='x'?p.x:p.d;if(!sep)throw Error('กรุณาระบุตัวแยก');
+  const parts=d.r.map(r=>{let a=sep===' '?S(r[ci]).trim().split(/\s+/):S(r[ci]).split(sep).map(x=>x.trim());if(+p.n>0&&a.length>p.n)a=[...a.slice(0,p.n-1),a.slice(p.n-1).join(sep)];return a});
+  const m=+p.n>0?+p.n:Math.max(1,...parts.map(a=>a.length)),base=p.name||d.h[ci];
+  for(let k=0;k<m;k++)ins(d,ci+1+k,`${base}_${k+1}`,parts.map(a=>a[k]??''),mk);
+  if(p.del){d.h.splice(ci,1);d.r.forEach(r=>r.splice(ci,1));const s=[...mk.cols].map(x=>x-1);mk.cols=new Set(s)}return`แยกเป็น ${m} คอลัมน์`}},
+{id:'cat',g:0,l:'รวมหลายคอลัมน์เป็นคอลัมน์เดียว',f:[CS,T('sep','ตัวคั่น',' '),T('name','ชื่อคอลัมน์ใหม่','รวม')],
+ run:(d,p,mk)=>{ins(d,Math.max(...p.cols)+1,p.name||'รวม',d.r.map(r=>p.cols.map(c=>S(r[c])).filter(x=>x!=='').join(p.sep)),mk)}},
+
+{id:'sRows',g:'เรียงลำดับ',l:'เรียงลำดับทั้งแถวตามคอลัมน์ที่เลือก',f:[C,L('o','ลำดับ',SO)],run:(d,p,mk)=>{const ci=+p.col,o=ord(p.o);d.r.sort((x,y)=>o(x[ci],y[ci]));mk.cols.add(ci)}},
+{id:'sCol',g:0,l:'เรียงลำดับเฉพาะค่าในคอลัมน์ (ไม่ย้ายคอลัมน์อื่น)',f:[CS,L('o','ลำดับ',SO)],
+ run:(d,p,mk)=>{p.cols.forEach(c=>{const v=d.r.map(r=>r[c]).sort(ord(p.o));v.forEach((x,i)=>{if(S(x)!==S(d.r[i][c]))mk.cells.add(i+':'+c);d.r[i][c]=x})})}},
+{id:'sRow',g:0,l:'เรียงลำดับค่าภายในแต่ละแถว (ข้ามคอลัมน์ที่เลือก)',f:[CS,L('o','ลำดับ',SO)],
+ run:(d,p,mk)=>{const cs=[...p.cols].sort((a,b)=>a-b);d.r.forEach((r,i)=>{const v=cs.map(c=>r[c]).sort(ord(p.o));cs.forEach((c,k)=>{if(S(v[k])!==S(r[c]))mk.cells.add(i+':'+c);r[c]=v[k]})})}},
+{id:'sHead',g:0,l:'เรียงลำดับคอลัมน์ตามชื่อหัวคอลัมน์',f:[L('o','ลำดับ',SO)],
+ run:(d,p,mk)=>{const o=ord(p.o),ix=d.h.map((_,i)=>i).sort((a,b)=>o(d.h[a],d.h[b]));d.h=ix.map(i=>d.h[i]);d.r=d.r.map(r=>ix.map(i=>r[i]));d.h.forEach((_,i)=>mk.cols.add(i))}},
+
+{id:'tr',g:'สลับแถว ⇄ คอลัมน์',l:'สลับทั้งตาราง (คอลัมน์กลายเป็นแถว / แถวกลายเป็นคอลัมน์)',f:[L('u','ชื่อคอลัมน์ของตารางใหม่',[['1','ใช้ค่าในคอลัมน์แรกของตารางเดิม'],['0','ตั้งชื่ออัตโนมัติ (คอลัมน์ 1, 2, ...)']])],
+ run:(d,p,mk)=>{const m=[d.h,...d.r],t=d.h.map((_,j)=>m.map(r=>r[j]));
+  if(p.u==='1'){d.h=uq(t[0]);d.r=t.slice(1)}else{d.h=uq(Array(m.length).fill(''));d.r=t}
+  d.h.forEach((_,i)=>mk.cols.add(i));return`ตารางใหม่ ${d.r.length} แถว × ${d.h.length} คอลัมน์`}},
+{id:'unp',g:0,l:'เปลี่ยนหลายคอลัมน์ให้เป็นแถว (Unpivot)',f:[{k:'cols',t:'cols',l:'คอลัมน์ที่ต้องการแตกเป็นแถว (คอลัมน์ที่ไม่เลือกจะถูกคัดลอกซ้ำทุกแถว)'},T('kn','ชื่อคอลัมน์เก็บชื่อเดิม','หัวข้อ'),T('vn','ชื่อคอลัมน์เก็บค่า','ค่า'),{k:'sk',t:'chk',l:'ข้ามค่าที่ว่าง'}],
+ run:(d,p,mk)=>{const cs=[...p.cols].sort((a,b)=>a-b),ids=d.h.map((_,i)=>i).filter(i=>!cs.includes(i)),out=[];
+  d.r.forEach(r=>cs.forEach(c=>{if(p.sk&&S(r[c]).trim()==='')return;out.push([...ids.map(i=>r[i]),d.h[c],r[c]])}));
+  d.h=[...ids.map(i=>d.h[i]),p.kn||'หัวข้อ',p.vn||'ค่า'];d.r=out;mk.cols.add(ids.length);mk.cols.add(ids.length+1);return`ได้ ${out.length} แถว`}},
+{id:'piv',g:0,l:'เปลี่ยนค่าในแถวให้เป็นคอลัมน์ (Pivot)',f:[{k:'cols',t:'cols',l:'คอลัมน์ที่ใช้ระบุแถวใหม่ (เช่น รหัส / ชื่อ)'},{k:'k',t:'col',l:'คอลัมน์ที่ค่าจะกลายเป็นชื่อคอลัมน์ใหม่'},{k:'v',t:'col',l:'คอลัมน์ที่เป็นค่าในเซลล์'}],
+ run:(d,p,mk)=>{const keys=[],g=new Map();
+  d.r.forEach(r=>{const k=S(r[+p.k]);if(!keys.includes(k))keys.push(k);const id=JSON.stringify(p.cols.map(c=>S(r[c])));
+   if(!g.has(id))g.set(id,{ids:p.cols.map(c=>r[c]),v:{}});const o=g.get(id);(o.v[k]=o.v[k]||[]).push(r[+p.v])});
+  const nh=uq([...p.cols.map(c=>d.h[c]),...keys.map(k=>k||'(ว่าง)')]);
+  d.r=[...g.values()].map(o=>[...o.ids,...keys.map(k=>{const a=o.v[k]||[];return a.length>1?a.map(S).join(', '):a.length?a[0]:''})]);
+  d.h=nh;for(let i=p.cols.length;i<nh.length;i++)mk.cols.add(i);return`ได้ ${d.r.length} แถว × ${nh.length} คอลัมน์`}},
+
+{id:'dup',g:'จัดการแถว / คอลัมน์',l:'ลบแถวที่ซ้ำกัน',f:[{k:'cols',t:'cols',l:'ตรวจความซ้ำจากคอลัมน์ (ไม่เลือก = ทุกคอลัมน์)',e:1}],
+ run:(d,p)=>{const cs=p.cols.length?p.cols:d.h.map((_,i)=>i),seen=new Set(),n=d.r.length;d.r=d.r.filter(r=>{const k=JSON.stringify(cs.map(c=>S(r[c]).trim()));if(seen.has(k))return false;seen.add(k);return true});return`ลบแถวซ้ำ ${n-d.r.length} แถว`}},
+{id:'empty',g:0,l:'ลบแถวที่ว่างทั้งแถว',f:[],run:d=>{const n=d.r.length;d.r=d.r.filter(r=>r.some(v=>S(v).trim()!==''));return`ลบแถวว่าง ${n-d.r.length} แถว`}},
+{id:'flt',g:0,l:'กรองแถว (เก็บเฉพาะแถวที่ตรงเงื่อนไข)',f:[C,L('c','เงื่อนไข',[['has','มีข้อความ'],['not','ไม่มีข้อความ'],['eq','เท่ากับ'],['gt','มากกว่า'],['lt','น้อยกว่า'],['em','เซลล์ว่าง'],['ne','เซลล์ไม่ว่าง']]),T('t','ค่าที่ใช้เปรียบเทียบ')],
+ run:(d,p)=>{const ci=+p.col,n=d.r.length;d.r=d.r.filter(r=>{const s=S(r[ci]);return({has:()=>s.includes(p.t),not:()=>!s.includes(p.t),eq:()=>s.trim()===p.t.trim(),gt:()=>nv(s)!==null&&nv(s)>+p.t,lt:()=>nv(s)!==null&&nv(s)<+p.t,em:()=>s.trim()==='',ne:()=>s.trim()!==''})[p.c]()});return`เหลือ ${d.r.length} จาก ${n} แถว`}},
+{id:'del',g:0,l:'ลบคอลัมน์ที่เลือก',f:[CS],run:(d,p)=>{[...p.cols].sort((a,b)=>b-a).forEach(c=>{d.h.splice(c,1);d.r.forEach(r=>r.splice(c,1))});return`ลบ ${p.cols.length} คอลัมน์`}},
+{id:'addCol',g:0,l:'เพิ่มคอลัมน์ใหม่ (เปล่า หรือใส่ค่าเดียวกันทุกแถว)',
+ f:[L('pos','ตำแหน่งที่แทรก',[['end','ท้ายตาราง'],['start','ต้นตาราง'],['after','หลังคอลัมน์ที่เลือก']]),{k:'at',t:'col',l:'คอลัมน์อ้างอิง (ใช้เมื่อเลือก "หลังคอลัมน์ที่เลือก")'},
+  T('name','ชื่อคอลัมน์ใหม่','คอลัมน์ใหม่'),T('val','ค่าที่ใส่ทุกแถว (เว้นว่าง = คอลัมน์เปล่า)'),N('n','จำนวนคอลัมน์ที่เพิ่ม',1)],
+ run:(d,p,mk)=>{const n=Math.max(1,Math.floor(+p.n)||1),at=p.pos==='start'?0:p.pos==='after'?+p.at+1:d.h.length,base=p.name||'คอลัมน์ใหม่';
+  for(let k=0;k<n;k++)ins(d,at+k,n>1?`${base}_${k+1}`:base,d.r.map(()=>p.val),mk);
+  d.h=uq(d.h);return`เพิ่ม ${n} คอลัมน์`}},
+{id:'addRow',g:0,l:'เพิ่มแถวใหม่ (เปล่า หรือใส่ค่าเดียวกันทุกช่อง)',
+ f:[L('pos','ตำแหน่งที่แทรก',[['end','ท้ายตาราง'],['start','ต้นตาราง'],['after','หลังแถวที่ระบุ']]),N('at','แถวที่ (ใช้เมื่อเลือก "หลังแถวที่ระบุ")',1),
+  N('n','จำนวนแถวที่เพิ่ม',1),T('val','ค่าที่ใส่ทุกช่อง (เว้นว่าง = แถวเปล่า)')],
+ run:(d,p,mk)=>{const n=Math.max(1,Math.floor(+p.n)||1),len=d.r.length,idx=p.pos==='start'?0:p.pos==='after'?Math.min(len,Math.max(0,Math.floor(+p.at)||0)):len;
+  d.r.splice(idx,0,...Array.from({length:n},()=>Array(d.h.length).fill(p.val)));
+  for(let k=0;k<n;k++)mk.rows.add(idx+k);return`เพิ่ม ${n} แถว (เริ่มที่แถว ${idx+1})`}}
+];
+OPS.forEach((o,i)=>{if(!o.g)o.g=OPS[i-1].g});
+
+/* ---------- ตัวอย่างเฉพาะฟังก์ชัน (สลับแถว ⇄ คอลัมน์) ---------- */
+const chk=(k,ix)=>document.querySelectorAll(`#f_${k} input`).forEach(i=>i.checked=ix.includes(+i.value));
+const DEMO={
+ tr:{t:'ตารางยอดขายแยกตามสินค้า (สินค้าอยู่ในแถว เดือนอยู่ในคอลัมน์) → สลับให้เดือนเป็นแถว สินค้าเป็นคอลัมน์',
+  data:[['สินค้า','ม.ค.','ก.พ.','มี.ค.','เม.ย.'],['ข้าวหอมมะลิ',120,135,150,142],['น้ำตาลทราย',80,76,91,88],['น้ำมันปาล์ม',45,52,49,60]],
+  set:()=>{$('#p_u').value='1'}},
+ unp:{t:'ตารางกว้าง (แต่ละเดือนเป็นคอลัมน์) → แตกเป็นแถว คอลัมน์ละ 1 แถวต่อคน',
+  data:[['ชื่อ','ม.ค.','ก.พ.','มี.ค.'],['สมชาย',12500,13200,11800],['สมหญิง',9800,10450,''],['วิชัย',15300,14100,16750]],
+  set:()=>{chk('cols',[1,2,3]);$('#p_kn').value='เดือน';$('#p_vn').value='ยอดขาย';$('#p_sk').checked=true}},
+ piv:{t:'ตารางยาว (1 แถวต่อ 1 คน/เดือน) → เปลี่ยนเดือนให้เป็นคอลัมน์ กลายเป็น 1 แถวต่อคน',
+  data:[['ชื่อ','เดือน','ยอดขาย'],['สมชาย','ม.ค.',12500],['สมชาย','ก.พ.',13200],['สมชาย','มี.ค.',11800],['สมหญิง','ม.ค.',9800],['สมหญิง','ก.พ.',10450],['วิชัย','ม.ค.',15300],['วิชัย','ก.พ.',14100],['วิชัย','มี.ค.',16750]],
+  set:()=>{chk('cols',[0]);$('#p_k').value='1';$('#p_v').value='2'}},
+ addCol:{t:'ตารางรายชื่อ → เพิ่มคอลัมน์ "สถานะ" ที่มีค่า "ใหม่" ทุกแถว แทรกต่อจากคอลัมน์ชื่อ',
+  data:[['ชื่อ','จังหวัด','ยอดขาย'],['สมชาย','กรุงเทพมหานคร',12500],['สมหญิง','มหาสารคาม',9800],['วิชัย','ขอนแก่น',15300]],
+  set:()=>{$('#p_pos').value='after';$('#p_at').value='0';$('#p_name').value='สถานะ';$('#p_val').value='ใหม่'}},
+ addRow:{t:'ตารางรายชื่อ → แทรกแถวใหม่ 2 แถว ที่มีค่า "(กรอกข้อมูล)" ต่อจากแถวที่ 1',
+  data:[['ชื่อ','จังหวัด','ยอดขาย'],['สมชาย','กรุงเทพมหานคร',12500],['สมหญิง','มหาสารคาม',9800],['วิชัย','ขอนแก่น',15300]],
+  set:()=>{$('#p_pos').value='after';$('#p_at').value='1';$('#p_n').value='2';$('#p_val').value='(กรอกข้อมูล)'}}};
+function tryDemo(id){const dm=DEMO[id];fileName='ตัวอย่าง_'+id;wb=null;$('#fopts').classList.add('hide');
+ useAoa(dm.data,true);$('#op').value=id;buildForm();dm.set();
+ $('#info').textContent+=' · ตัวอย่างสำหรับฟังก์ชันนี้';$('#run').click()}
+
+/* ---------- การแก้ข้อมูล ---------- */
+function uq(a){const c={};return a.map((x,i)=>{x=S(x).trim()||'คอลัมน์ '+(i+1);c[x]=(c[x]||0)+1;return c[x]>1?`${x}_${c[x]}`:x})}
+function ins(d,at,name,vals,mk){d.h.splice(at,0,name);d.r.forEach((r,i)=>r.splice(at,0,vals[i]??''));mk.cols.add(at)}
+function runMap(d,p,mk,fn){const ci=+p.col,vals=d.r.map(r=>fn(r[ci],p,r));
+ if(p.mode==='new')ins(d,ci+1,p.name||`${d.h[ci]}_ใหม่`,vals,mk);
+ else vals.forEach((v,i)=>{if(S(v)!==S(d.r[i][ci]))mk.cells.add(i+':'+ci);d.r[i][ci]=v})}
+
+/* ---------- โหลดไฟล์ ---------- */
+function readFile(f){if(!f)return;fileName=f.name.replace(/\.[^.]+$/,'');const rd=new FileReader();
+ rd.onload=e=>{try{wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true})}catch(x){return alert('อ่านไฟล์ไม่ได้: '+x.message)}
+  $('#sheet').innerHTML=wb.SheetNames.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');$('#fname').textContent=f.name;$('#fopts').classList.remove('hide');loadSheet()};
+ rd.readAsArrayBuffer(f)}
+function loadSheet(){if(!wb)return;const ws=wb.Sheets[wb.SheetNames[+$('#sheet').value]];
+ useAoa(XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true}),$('#hdr').checked)}
+function useAoa(a,hd){a=a.filter(r=>r.some(v=>S(v).trim()!==''));
+ if(!a.length)return alert('ชีตนี้ไม่มีข้อมูล');const w=Math.max(...a.map(r=>r.length));a=a.map(r=>Array.from({length:w},(_,i)=>r[i]??''));
+ let h=hd?a.shift().map(S):a[0].map((_,i)=>'คอลัมน์ '+(i+1));
+ const seen={};h=h.map((x,i)=>{x=x.trim()||'คอลัมน์ '+(i+1);seen[x]=(seen[x]||0)+1;return seen[x]>1?`${x}_${seen[x]}`:x});
+ orig={h,r:a};
+ $('#info').textContent=`ทั้งหมด ${a.length.toLocaleString()} แถว × ${h.length} คอลัมน์ (แสดงตัวอย่าง 5 แถวแรก)`;
+ $('#prev').innerHTML=tbl(orig,null,5);['#s2','#s3'].forEach(s=>$(s).classList.remove('hide'));resetAll()}
+
+/* ---------- แสดงตาราง ---------- */
+function tbl(d,mk,lim){let t='<table><thead><tr><th class="ix">#</th>'+d.h.map((x,i)=>`<th class="${mk&&mk.cols.has(i)?'hc':''}">${esc(x)}</th>`).join('')+'</tr></thead><tbody>';
+ d.r.slice(0,lim).forEach((r,i)=>{const rw=mk&&mk.rows.has(i);t+=`<tr><td class="ix">${i+1}</td>`+r.map((v,j)=>`<td class="${rw||(mk&&mk.cells.has(i+':'+j))?'ch':mk&&mk.cols.has(j)?'nc':''}">${esc(S(v))}</td>`).join('')+'</tr>'});
+ return t+'</tbody></table>'}
+function showRes(msg){$('#s4').classList.remove('hide');$('#msg').textContent=msg;$('#res').innerHTML=tbl(cur,lastMk,300);
+ $('#note').textContent=`ตาราง ${cur.r.length.toLocaleString()} แถว × ${cur.h.length} คอลัมน์`+(cur.r.length>300?' (แสดง 300 แถวแรก แต่ไฟล์ที่ดาวน์โหลดมีครบทุกแถว)':'');
+ $('#undo').disabled=!hist.length}
+
+/* ---------- ฟอร์มฟังก์ชัน ---------- */
+const co=(opt)=>(opt!=null?`<option value="">${opt}</option>`:'')+cur.h.map((h,i)=>`<option value="${i}">${i+1}. ${esc(h)}</option>`).join('');
+function buildForm(){const op=OPS.find(o=>o.id===$('#op').value);
+ $('#form').innerHTML=op.f.map(f=>{const id='p_'+f.k;
+  if(f.t==='col')return`<label>${f.l}<select id="${id}">${co(f.opt)}</select></label>`;
+  if(f.t==='cols')return`<div><div style="font-size:13.5px;color:var(--mut);margin-bottom:4px">${f.l} <button class="s" data-a="1">เลือกทั้งหมด</button> <button class="s" data-a="0">ล้าง</button></div><div class="cks" id="f_${f.k}">${cur.h.map((h,i)=>`<label><input type="checkbox" value="${i}">${esc(h)}</label>`).join('')}</div></div>`;
+  if(f.t==='num')return`<label>${f.l}<input type="number" id="${id}" value="${f.v}" step="any"></label>`;
+  if(f.t==='text')return`<label>${f.l}<input type="text" id="${id}" value="${esc(f.v)}"></label>`;
+  if(f.t==='chk')return`<label class="in"><input type="checkbox" id="${id}">${f.l}</label>`;
+  return`<label>${f.l}<select id="${id}">${f.o.map(([v,t])=>`<option value="${esc(v)}">${t}</option>`).join('')}</select></label>`}).join('');
+ $('#form').querySelectorAll('button[data-a]').forEach(b=>b.onclick=()=>b.closest('div').parentNode.querySelectorAll('input').forEach(i=>i.checked=b.dataset.a==='1'));
+ $('#modebox').innerHTML=op.map?`<label class="in"><input type="radio" name="mode" value="new" checked>สร้างเป็นคอลัมน์ใหม่</label><label style="min-width:200px">ชื่อคอลัมน์ใหม่ (เว้นว่าง = ตั้งให้อัตโนมัติ)<input type="text" id="p_name"></label><label class="in"><input type="radio" name="mode" value="rep">แทนที่ค่าในคอลัมน์เดิม</label>`:DEMO[op.id]?`<button type="button" onclick="tryDemo('${op.id}')">▶ ลองใช้ตัวอย่างของฟังก์ชันนี้</button><span class="meta" style="margin:0;flex:1 1 300px">${DEMO[op.id].t}</span>`:''}
+function fillOps(){const gs={};OPS.forEach(o=>(gs[o.g]=gs[o.g]||[]).push(o));
+ $('#op').innerHTML=Object.entries(gs).map(([g,a])=>`<optgroup label="${g}">${a.map(o=>`<option value="${o.id}">${o.l}</option>`).join('')}</optgroup>`).join('')}
+function getP(op){const p={};op.f.forEach(f=>{const e=$('#p_'+f.k);p[f.k]=f.t==='cols'?[...document.querySelectorAll(`#f_${f.k} input:checked`)].map(x=>+x.value):f.t==='chk'?e.checked:e.value});
+ if(op.map){p.mode=document.querySelector('input[name=mode]:checked').value;p.name=$('#p_name').value.trim()}return p}
+
+/* ---------- ประมวลผล ---------- */
+function exec(fn){const d=structuredClone(cur),mk={cells:new Set(),cols:new Set(),rows:new Set()};let m;
+ try{m=fn(d,mk)}catch(e){return alert('ทำไม่ได้: '+e.message)}
+ hist.push({cur,mk:lastMk});cur=d;lastMk=mk;
+ const ch=mk.cells.size;showRes(`ประมวลผลสำเร็จ${m?' · '+m:''}${ch?` · แก้ไข ${ch.toLocaleString()} เซลล์`:''}${mk.cols.size&&!ch?` · ${mk.cols.size} คอลัมน์ได้รับผล`:''}`);}
+$('#run').onclick=()=>{const op=OPS.find(o=>o.id===$('#op').value),p=getP(op);
+ const need=op.f.find(f=>f.t==='cols'&&!f.e&&!p[f.k].length);if(need)return alert('กรุณาเลือกคอลัมน์อย่างน้อย 1 คอลัมน์');
+ exec((d,mk)=>op.map?runMap(d,p,mk,op.map):op.run(d,p,mk))};
+$('#undo').onclick=()=>{const h=hist.pop();if(!h)return;cur=h.cur;lastMk=h.mk;refresh();if(hist.length)showRes('ย้อนกลับ 1 ขั้นแล้ว');else{$('#s4').classList.add('hide');$('#undo').disabled=true}};
+function refresh(){buildForm()}
+function resetAll(){cur=structuredClone(orig);hist=[];lastMk=null;$('#s4').classList.add('hide');$('#undo').disabled=true;buildForm()}
+$('#reset').onclick=()=>{if(!hist.length)return resetAll();ask('ล้างการแก้ไขทั้งหมดและกลับไปใช้ข้อมูลเดิม?',()=>{resetAll();$('#s3').scrollIntoView({behavior:'smooth',block:'nearest'})})};
+$('#op').onchange=buildForm;
+
+/* ---------- แก้ชื่อคอลัมน์ ---------- */
+$('#ren').onclick=()=>{$('#rnl').innerHTML=cur.h.map((h,i)=>`<span style="color:var(--mut);text-align:right">${i+1}</span><input type="text" value="${esc(h)}">`).join('');$('#dlg').showModal()};
+$('#rnno').onclick=()=>$('#dlg').close();
+$('#rnok').onclick=()=>{const v=[...document.querySelectorAll('#rnl input')].map((x,i)=>x.value.trim()||cur.h[i]);$('#dlg').close();
+ exec((d,mk)=>{let n=0;v.forEach((x,i)=>{if(x!==d.h[i]){d.h[i]=x;mk.cols.add(i);n++}});return`เปลี่ยนชื่อ ${n} คอลัมน์`});buildForm()};
+
+/* ---------- ดาวน์โหลด ---------- */
+$('#dl').onclick=()=>{const ws=XLSX.utils.aoa_to_sheet([cur.h,...cur.r],{cellDates:true});
+ ws['!cols']=cur.h.map((h,i)=>({wch:Math.min(50,Math.max(String(h).length,...cur.r.slice(0,200).map(r=>S(r[i]).length))+2)}));
+ const b=XLSX.utils.book_new();XLSX.utils.book_append_sheet(b,ws,'ผลลัพธ์');XLSX.writeFile(b,fileName+'_จัดระเบียบ.xlsx',{cellDates:true})};
+$('#dlc').onclick=()=>{const csv=XLSX.utils.sheet_to_csv(XLSX.utils.aoa_to_sheet([cur.h,...cur.r],{cellDates:true})),
+ a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=fileName+'_จัดระเบียบ.csv';a.click()};
+
+/* ---------- เริ่มต้น ---------- */
+$('#file').onchange=e=>readFile(e.target.files[0]);
+$('#sheet').onchange=loadSheet;$('#hdr').onchange=loadSheet;
+const dz=$('#drop');['dragover','dragenter'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>readFile(e.dataTransfer.files[0]));
+$('#sample').onclick=()=>{fileName='ข้อมูลตัวอย่าง';wb=null;$('#fopts').classList.add('hide');
+ useAoa([['รหัส','ชื่อ-นามสกุล','อีเมล','ที่อยู่','วันที่สมัคร','ยอดขาย Q1','ยอดขาย Q2','ยอดขาย Q3'],
+ ['A001','สมชาย ใจดี','somchai@example.com','123/4 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110','2024-03-15',12500,13200,11800],
+ ['A002','สมหญิง รักเรียน','somying@mail.co.th','55 ม.3 ต.ท่าขอนยาง อ.กันทรวิชัย มหาสารคาม 44150','15/04/2567',9800,10450,''],
+ ['A003','วิชัย มั่นคง','wichai.m@example.com','9/9 ถ.มิตรภาพ ต.ในเมือง อ.เมือง ขอนแก่น 40000','2024-05-02',15300,14100,16750],
+ ['B001','นภา สดใส','napa_s@example.org','88 ถ.นิมมานเหมินท์ ต.สุเทพ อ.เมือง เชียงใหม่ 50200','20/06/2024',7600,8200,9100],
+ ['B002','ประเสริฐ ทองดี','prasert@example.com','12 ซ.ลาดพร้าว 71 แขวงลาดพร้าว เขตลาดพร้าว กรุงเทพมหานคร 10230','2024-07-30',11200,10900,12400],
+ ['B003','อรทัย แก้วใส','orathai@mail.co.th','301 ถ.ราชดำเนิน ต.ในเมือง อ.เมือง นครราชสีมา 30000','05/08/2567',8400,9050,8700],
+ ['B003','อรทัย แก้วใส','orathai@mail.co.th','301 ถ.ราชดำเนิน ต.ในเมือง อ.เมือง นครราชสีมา 30000','05/08/2567',8400,9050,8700],
+ ['C001','ธนากร เจริญสุข','thanakorn@example.com','77 ถ.ศรีสมาน ต.บางตลาด อ.ปากเกร็ด นนทบุรี 11120','2024-09-12',13900,15200,14600]],true);
+ $('#info').textContent+=' · ข้อมูลตัวอย่าง (มีแถวซ้ำ 1 แถวและช่องว่าง 1 ช่องไว้ทดสอบ)'};
+fillOps();
+</script>
+</body>
+</html>
